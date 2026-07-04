@@ -1,0 +1,2 @@
+rustavi="daniel"
+print(rustavi)

@@ -1,0 +1,2 @@
+beridze="mcxeta"
+print(beridze)
