@@ -1,0 +1,5 @@
+firstname=input("enter your firstname:")
+lastname=input("enter your lastname:")
+age1=int(input)("enter your age:")
+print()
+type(age1)
