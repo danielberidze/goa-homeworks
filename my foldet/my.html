@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zombie Survival</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #080b0d;
+    color: white;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+
+canvas {
+    display: block;
+    margin: auto;
+    background: #18221b;
+    cursor: crosshair;
+}
+
+#menu, #gameOver, #win {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,.88);
+    z-index: 10;
+}
+
+h1 {
+    font-size: 55px;
+    margin: 10px;
+    color: #62e36d;
+    text-shadow: 0 0 20px #2dff42;
+}
+
+button {
+    padding: 15px 35px;
+    margin: 10px;
+    font-size: 20px;
+    border: 0;
+    border-radius: 10px;
+    background: #37a94b;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #4dcc5d;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#hud {
+    position: fixed;
+    top: 10px;
+    left: 15px;
+    z-index: 5;
+    font-size: 20px;
+    text-shadow: 2px 2px 3px black;
+}
+
+#healthBar {
+    width: 220px;
+    height: 20px;
+    background: #400;
+    border: 2px solid white;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#health {
+    width: 100%;
+    height: 100%;
+    background: #28df43;
+}
+</style>
+</head>
+
+<body>
+
+<div id="menu">
+    <h1>🧟 ZOMBIE SURVIVAL</h1>
+    <p>გადარჩი ყველა დონეზე!</p>
+    <button onclick="startGame()">START GAME</button>
+    <p>WASD — მოძრაობა | მაუსი — დამიზნება | CLICK — სროლა</p>
+</div>
+
+<div id="gameOver" class="hidden">
+    <h1>💀 GAME OVER</h1>
+    <h2 id="finalScore"></h2>
+    <button onclick="startGame()">RESTART</button>
+</div>
+
+<div id="win" class="hidden">
+    <h1>🏆 YOU WIN!</h1>
+    <h2 id="winScore"></h2>
+    <button onclick="startGame()">PLAY AGAIN</button>
+</div>
+
+<div id="hud" class="hidden">
+    ❤️ სიცოცხლე:
+    <div id="healthBar">
+        <div id="health"></div>
+    </div>
+
+    <div>🎯 ქულა: <span id="score">0</span></div>
+    <div>🪙 მონეტა: <span id="coins">0</span></div>
+    <div>🌊 დონე: <span id="level">1</span>/5</div>
+</div>
+
+<canvas id="game" width="1100" height="650"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let running = false;
+let score = 0;
+let coins = 0;
+let level = 1;
+
+let keys = {};
+let bullets = [];
+let zombies = [];
+let coinsOnMap = [];
+let particles = [];
+
+let mouse = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    down: false
+};
+
+let player = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    radius: 18,
+    speed: 4,
+    health: 100,
+    maxHealth: 100,
+    angle: 0,
+    shootCooldown: 0
+};
+
+const menu = document.getElementById("menu");
+const gameOver = document.getElementById("gameOver");
+const win = document.getElementById("win");
+const hud = document.getElementById("hud");
+
+document.addEventListener("keydown", e => {
+    keys[e.key.toLowerCase()] = true;
+
+    if (e.key.toLowerCase() === "r" && !running) {
+        startGame();
+    }
+});
+
+document.addEventListener("keyup", e => {
+    keys[e.key.toLowerCase()] = false;
+});
+
+canvas.addEventListener("mousemove", e => {
+    const rect = canvas.getBoundingClientRect();
+
+    mouse.x = (e.clientX - rect.left) *
+        canvas.width / rect.width;
+
+    mouse.y = (e.clientY - rect.top) *
+        canvas.height / rect.height;
+});
+
+canvas.addEventListener("mousedown", () => {
+    mouse.down = true;
+});
+
+canvas.addEventListener("mouseup", () => {
+    mouse.down = false;
+});
+
+function startGame() {
+
+    running = true;
+
+    score = 0;
+    coins = 0;
+    level = 1;
+
+    bullets = [];
+    zombies = [];
+    coinsOnMap = [];
+    particles = [];
+
+    player.x = canvas.width / 2;
+    player.y = canvas.height / 2;
+    player.health = 100;
+
+    menu.classList.add("hidden");
+    gameOver.classList.add("hidden");
+    win.classList.add("hidden");
+    hud.classList.remove("hidden");
+
+    createLevel();
+
+    updateHUD();
+}
+
+function createLevel() {
+
+    zombies = [];
+    coinsOnMap = [];
+
+    let zombieCount = 5 + level * 4;
+
+    for (let i = 0; i < zombieCount; i++) {
+
+        let side = Math.floor(Math.random() * 4);
+
+        let x, y;
+
+        if (side === 0) {
+            x = Math.random() * canvas.width;
+            y = -30;
+        }
+
+        if (side === 1) {
+            x = canvas.width + 30;
+            y = Math.random() * canvas.height;
+        }
+
+        if (side === 2) {
+            x = Math.random() * canvas.width;
+            y = canvas.height + 30;
+        }
+
+        if (side === 3) {
+            x = -30;
+            y = Math.random() * canvas.height;
+        }
+
+        zombies.push({
+            x: x,
+            y: y,
+            radius: 20,
+            speed: 0.7 + level * 0.15,
+            health: 2 + level
+        });
+    }
+
+    for (let i = 0; i < 3 + level; i++) {
+
+        coinsOnMap.push({
+            x: 50 + Math.random() * (canvas.width - 100),
+            y: 50 + Math.random() * (canvas.height - 100),
+            radius: 9
+        });
+    }
+}
+
+function shoot() {
+
+    if (player.shootCooldown > 0) return;
+
+    let dx = mouse.x - player.x;
+    let dy = mouse.y - player.y;
+
+    let distance = Math.sqrt(dx * dx + dy * dy);
+
+    bullets.push({
+        x: player.x,
+        y: player.y,
+        dx: dx / distance * 10,
+        dy: dy / distance * 10,
+        radius: 5
+    });
+
+    player.shootCooldown = 12;
+
+    soundShoot();
+}
+
+function soundShoot() {
+
+    const audio = new Audio();
+
+    audio.src =
+        "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=";
+
+    audio.play().catch(() => {});
+}
+
+function update() {
+
+    if (!running) return;
+
+    movePlayer();
+
+    if (mouse.down) {
+        shoot();
+    }
+
+    if (player.shootCooldown > 0) {
+        player.shootCooldown--;
+    }
+
+    updateBullets();
+    updateZombies();
+    updateCoins();
+    updateParticles();
+
+    checkLevel();
+
+    updateHUD();
+}
+
+function movePlayer() {
+
+    let dx = 0;
+    let dy = 0;
+
+    if (keys["w"]) dy--;
+    if (keys["s"]) dy++;
+    if (keys["a"]) dx--;
+    if (keys["d"]) dx++;
+
+    if (dx !== 0 || dy !== 0) {
+
+        let length = Math.sqrt(dx * dx + dy * dy);
+
+        dx /= length;
+        dy /= length;
+
+        player.x += dx * player.speed;
+        player.y += dy * player.speed;
+    }
+
+    player.x = Math.max(
+        player.radius,
+        Math.min(canvas.width - player.radius, player.x)
+    );
+
+    player.y = Math.max(
+        player.radius,
+        Math.min(canvas.height - player.radius, player.y)
+    );
+
+    player.angle = Math.atan2(
+        mouse.y - player.y,
+        mouse.x - player.x
+    );
+}
+
+function updateBullets() {
+
+    for (let i = bullets.length - 1; i >= 0; i--) {
+
+        let b = bullets[i];
+
+        b.x += b.dx;
+        b.y += b.dy;
+
+        if (
+            b.x < 0 ||
+            b.x > canvas.width ||
+            b.y < 0 ||
+            b.y > canvas.height
+        ) {
+            bullets.splice(i, 1);
+            continue;
+        }
+
+        for (let j = zombies.length - 1; j >= 0; j--) {
+
+            let z = zombies[j];
+
+            let dx = b.x - z.x;
+            let dy = b.y - z.y;
+
+            let distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < b.radius + z.radius) {
+
+                z.health--;
+
+                createParticles(z.x, z.y);
+
+                bullets.splice(i, 1);
+
+                if (z.health <= 0) {
+
+                    score += 100;
+
+                    if (Math.random() < 0.4) {
+                        coinsOnMap.push({
+                            x: z.x,
+                            y: z.y,
+                            radius: 9
+                        });
+                    }
+
+                    zombies.splice(j, 1);
+                }
+
+                break;
+            }
+        }
+    }
+}
+
+function updateZombies() {
+
+    for (let z of zombies) {
+
+        let dx = player.x - z.x;
+        let dy = player.y - z.y;
+
+        let distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance > 0) {
+
+            z.x += dx / distance * z.speed;
+            z.y += dy / distance * z.speed;
+        }
+
+        if (distance < player.radius + z.radius) {
+
+            player.health -= 0.4;
+
+            createParticles(player.x, player.y);
+
+            if (player.health <= 0) {
+                endGame();
+            }
+        }
+    }
+}
+
+function updateCoins() {
+
+    for (let i = coinsOnMap.length - 1; i >= 0; i--) {
+
+        let c = coinsOnMap[i];
+
+        let dx = player.x - c.x;
+        let dy = player.y - c.y;
+
+        let distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < player.radius + c.radius) {
+
+            coins++;
+            score += 50;
+
+            coinsOnMap.splice(i, 1);
+        }
+    }
+}
+
+function checkLevel() {
+
+    if (zombies.length === 0) {
+
+        if (level >= 5) {
+
+            running = false;
+
+            document.getElementById("winScore").textContent =
+                "ქულა: " + score;
+
+            win.classList.remove("hidden");
+
+        } else {
+
+            level++;
+
+            player.health = Math.min(
+                player.maxHealth,
+                player.health + 25
+            );
+
+            createLevel();
+        }
+    }
+}
+
+function createParticles(x, y) {
+
+    for (let i = 0; i < 8; i++) {
+
+        particles.push({
+            x: x,
+            y: y,
+            dx: (Math.random() - 0.5) * 5,
+            dy: (Math.random() - 0.5) * 5,
+            life: 30
+        });
+    }
+}
+
+function updateParticles() {
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+
+        let p = particles[i];
+
+        p.x += p.dx;
+        p.y += p.dy;
+        p.life--;
+
+        if (p.life <= 0) {
+            particles.splice(i, 1);
+        }
+    }
+}
+
+function draw() {
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    drawBackground();
+    drawCoins();
+    drawBullets();
+    drawZombies();
+    drawPlayer();
+    drawParticles();
+}
+
+function drawBackground() {
+
+    ctx.fillStyle = "#18251b";
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.strokeStyle = "#223523";
+
+    for (let x = 0; x < canvas.width; x += 50) {
+
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+
+    for (let y = 0; y < canvas.height; y += 50) {
+
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+}
+
+function drawPlayer() {
+
+    ctx.save();
+
+    ctx.translate(player.x, player.y);
+    ctx.rotate(player.angle);
+
+    ctx.fillStyle = "#3498db";
+
+    ctx.beginPath();
+    ctx.arc(
+        0,
+        0,
+        player.radius,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+    ctx.fillStyle = "#111";
+
+    ctx.fillRect(
+        10,
+        -5,
+        27,
+        10
+    );
+
+    ctx.restore();
+}
+
+function drawZombies() {
+
+    for (let z of zombies) {
+
+        ctx.fillStyle = "#55a84f";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            z.x,
+            z.y,
+            z.radius,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+        ctx.fillStyle = "#111";
+
+        ctx.beginPath();
+        ctx.arc(
+            z.x - 7,
+            z.y - 5,
+            3,
+            0,
+            Math.PI * 2
+        );
+        ctx.arc(
+            z.x + 7,
+            z.y - 5,
+            3,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+        ctx.fillStyle = "#900";
+
+        ctx.fillRect(
+            z.x - 15,
+            z.y - 30,
+            30,
+            5
+        );
+
+        ctx.fillStyle = "#2f2";
+
+        ctx.fillRect(
+            z.x - 15,
+            z.y - 30,
+            30 * (z.health / (2 + level)),
+            5
+        );
+    }
+}
+
+function drawBullets() {
+
+    ctx.fillStyle = "#ffd23f";
+
+    for (let b of bullets) {
+
+        ctx.beginPath();
+
+        ctx.arc(
+            b.x,
+            b.y,
+            b.radius,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+    }
+}
+
+function drawCoins() {
+
+    for (let c of coinsOnMap) {
+
+        ctx.fillStyle = "#ffd700";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            c.x,
+            c.y,
+            c.radius,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+        ctx.fillStyle = "#8a6500";
+
+        ctx.font = "12px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(
+            "$",
+            c.x,
+            c.y + 4
+        );
+    }
+}
+
+function drawParticles() {
+
+    for (let p of particles) {
+
+        ctx.fillStyle = "#ff4444";
+
+        ctx.fillRect(
+            p.x,
+            p.y,
+            4,
+            4
+        );
+    }
+}
+
+function updateHUD() {
+
+    document.getElementById("score").textContent = score;
+    document.getElementById("coins").textContent = coins;
+    document.getElementById("level").textContent = level;
+
+    document.getElementById("health").style.width =
+        Math.max(0, player.health) + "%";
+}
+
+function endGame() {
+
+    running = false;
+
+    document.getElementById("finalScore").textContent =
+        "ქულა: " + score;
+
+    gameOver.classList.remove("hidden");
+}
+
+function gameLoop() {
+
+    update();
+    draw();
+
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
