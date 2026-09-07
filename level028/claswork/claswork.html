@@ -1,0 +1,116 @@
+<!-- 
+ span გამოიყენება ტექსტში რაღაც სიტყვის მოსანიშნად. 
+ span იკავებს მხოლოდ იმ ადგილს რაც ჭირდება 
+ span-ს div-ისგან განსხვავებით არ შეუძლია width/height/margin-top,bottom-ის სრულყოფილად გამოყენება, თუ არ შეცვლით მის display-ს (მაგ. inline-block-ად).
+-->
+<!-- 
+ div ავტომატურად იწყებს ახალ ხაზს და იკავებს მთელ სიგანეს
+ div ქმნის ბლოკს სადაც შეგიძლია ჩაწერო ტექსტი
+ div ბლოკ ლეველ ელემენტია-->
+ <!-- 
+ inline ელემენტი არის ისეთი რომ მხოლოდ იმ ადგილს იკავებს რაც სჭირდება.
+ inline არის ძალიან კომპაქტური ერთ გვერდზე
+ inline არის blok level ზე უფრო მოსახერხებელი
+ -->
+ <!-- 
+ blok level არის ტექსტი რომელიც დიდ ადგილს იკავებს 
+ blok level ორჯერ უფრო დიდ ადგილს იკავებს ვიდრე სჭირდება
+ blok level არის ისეთი ელემენტი რომელიც ავტომატურად ხსნის ახალ ხაზს
+--!->
+
+-->
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 30px;
+    background-color: #f4f4f4;
+  }
+
+  h1 {
+    text-align: center;
+  }
+
+
+  .links-block {
+    display: block;                 
+    color: #ffffff;                 
+    background-color: #2c3e50;      
+    text-align: center;             
+    font-size: 18px;               
+    border: 3px solid #1a252f;      
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .links-block a {
+    color: #f1c40f;
+    display: inline-block;          /* ლინკები ერთმანეთის გვერდით */
+    margin: 0 10px;
+    text-decoration: none;
+  }
+
+  .links-block a:hover {
+    text-decoration: underline;
+  }
+
+  /* ---------- მეორე div: ტექსტები ---------- */
+  .text-block {
+    display: block;                 /* display */
+    color: #2c3e50;                 /* ტექსტის ფერი */
+    background-color: #ecf0f1;      /* ფონის ფერი */
+    text-align: left;               /* ტექსტის სწორება მარცხნივ */
+    font-size: 16px;                /* შრიფტის ზომა */
+    border: 3px dashed #7f8c8d;     /* ჩარჩო (წყვეტილი) */
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  /* ---------- მესამე div: სურათები ---------- */
+  .images-block {
+    display: block;                 /* display */
+    background-color: #dfe6e9;      /* ფონის ფერი */
+    text-align: center;             /* სურათების სწორება ცენტრში */
+    border: 3px double #636e72;     /* ჩარჩო (ორმაგი) */
+    padding: 20px;
+  }
+
+  .images-block img {
+    display: inline-block;          /* სურათები გვერდიგვერდ */
+    width: 150px;
+    height: 150px;
+    margin: 10px;
+    border: 2px solid #2d3436;
+  }
+</style>
+</head>
+<body>
+
+<h1>Div და Span - პრაქტიკული დავალება</h1>
+
+<!-- პირველი div ბლოკი - მხოლოდ ლინკები -->
+<div class="links-block">
+  <a href="https://www.google.com" target="_blank">Google</a>
+  <a href="https://www.youtube.com" target="_blank">YouTube</a>
+  <a href="https://www.wikipedia.org" target="_blank">Wikipedia</a>
+</div>
+
+<!-- მეორე div ბლოკი - მხოლოდ ტექსტი -->
+<div class="text-block">
+  <p>ეს არის ტექსტის ბლოკი. div ელემენტი გამოიყენება, როგორც 
+  კონტეინერი, სადაც შეგვიძლია განვათავსოთ პარაგრაფები, სათაურები 
+  და ნებისმიერი სხვა ტექსტური კონტენტი. ამ ბლოკს აქვს საკუთარი 
+  ფონის ფერი, ჩარჩო და ტექსტის სწორება, რომელიც CSS-ით არის 
+  განსაზღვრული.</p>
+</div>
+
+<!-- მესამე div ბლოკი - მხოლოდ სურათები -->
+<div class="images-block">
+  <img src="https://picsum.photos/id/10/300/300" alt="სურათი 1">
+  <img src="https://picsum.photos/id/20/300/300" alt="სურათი 2">
+  <img src="https://picsum.photos/id/30/300/300" alt="სურათი 3">
+</div>
+
+</body>
+</html>
