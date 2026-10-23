@@ -1,0 +1,9 @@
+.outfit-uniquifier {
+  font-family: "Outfit", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: weight;
+  font-style: normal;
+}
+*{border: black solid 5px;border-box}
+body{display:flex;
+}
